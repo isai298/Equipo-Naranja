@@ -6,11 +6,124 @@
     <title>Prototipo SCIV - Sistema de Control de Inventario y Ventas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+    </style>
 </head>
-<body class="bg-gray-100 flex h-screen items-center justify-center">
-    <div class="text-center">
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">SCIV Prototipo</h1>
-        <p class="text-gray-600">Sistema de Control de Inventario y Ventas — Estructura Base</p>
-    </div>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-slate-800 text-white flex flex-col justify-between shrink-0">
+        <div>
+            <div class="p-4 border-b border-slate-700 font-bold text-lg flex items-center gap-2">
+                <i class="fa-solid fa-boxes-packing text-indigo-400"></i>
+                <span>SCIV Prototipo</span>
+            </div>
+            <nav class="p-2 space-y-1 text-sm">
+                <button onclick="showScreen('s1')" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket w-5"></i> 1. Login
+                </button>
+                <button onclick="showScreen('s2')" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line w-5"></i> 2. Menú Principal
+                </button>
+                <button onclick="showScreen('s3')" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-box w-5"></i> 3. Productos
+                </button>
+                <button onclick="showScreen('s4')" class="nav-btn w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2 bg-slate-700 font-semibold">
+                    <i class="fa-solid fa-cart-shopping w-5"></i> 4. Ventas (Funcional)
+                </button>
+            </nav>
+        </div>
+        <div class="p-3 bg-slate-900 text-xs text-slate-400 text-center">
+            Prototipo Funcional SCIV v1.0
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+        <header class="bg-white shadow p-4 rounded-lg mb-6 flex justify-between items-center border border-gray-200">
+            <div class="flex items-center gap-4 text-sm font-medium text-gray-600">
+                <span class="text-indigo-600 font-bold">SCIV | Sistema de Control de Inventario y Ventas</span>
+            </div>
+        </header>
+
+        <section id="s4" class="screen active">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Registro de Ventas (Punto de Venta POS)</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg border shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4">
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre del Producto</label>
+                            <input type="text" id="prodName" placeholder="Ej. Leche 1L" class="w-full p-2 border rounded text-sm outline-none">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Precio ($)</label>
+                            <input type="number" id="prodPrice" placeholder="0.00" class="w-full p-2 border rounded text-sm outline-none">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad</label>
+                            <div class="flex gap-1">
+                                <input type="number" id="prodQty" value="1" min="1" class="w-full p-2 border rounded text-sm text-center outline-none">
+                                <button onclick="agregarProducto()" class="px-3 py-2 bg-green-600 text-white rounded text-sm font-bold"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border rounded">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 border-b text-gray-600">
+                                <tr>
+                                    <th class="p-3">Producto</th>
+                                    <th class="p-3">Cant.</th>
+                                    <th class="p-3">Precio</th>
+                                    <th class="p-3">Subtotal</th>
+                                    <th class="p-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody" class="divide-y">
+                                <tr><td colspan="5" class="p-4 text-center text-gray-400 text-xs">No hay productos agregados.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg border shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Resumen de Cobro</h3>
+                        <div class="text-3xl font-bold text-indigo-600 mb-6" id="totalDisplay">$ 0.00 MXN</div>
+                    </div>
+                    <button onclick="cobrarVenta()" class="w-full py-3 bg-indigo-600 text-white rounded font-bold shadow">Cobrar e Imprimir</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let carrito = [];
+        function agregarProducto() {
+            const name = document.getElementById('prodName').value.trim();
+            const price = parseFloat(document.getElementById('prodPrice').value);
+            const qty = parseInt(document.getElementById('prodQty').value);
+            if (!name || isNaN(price) || price <= 0) return alert('Ingrese datos válidos');
+            carrito.push({ name, price, qty, subtotal: price * qty });
+            actualizarTablaCarrito();
+        }
+        function actualizarTablaCarrito() {
+            const tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+            let totalGeneral = 0;
+            carrito.forEach((item, index) => {
+                totalGeneral += item.subtotal;
+                tbody.innerHTML += `<tr><td class="p-3">${item.name}</td><td class="p-3">${item.qty}</td><td class="p-3">$${item.price}</td><td class="p-3 font-bold">$${item.subtotal}</td><td class="p-3 text-center"><button onclick="carrito.splice(${index},1);actualizarTablaCarrito()" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            });
+            document.getElementById('totalDisplay').innerText = `$ ${totalGeneral.toFixed(2)} MXN`;
+        }
+        function cobrarVenta() {
+            if(carrito.length === 0) return alert('Carrito vacío');
+            alert('¡Venta cobrada con éxito!');
+            carrito = [];
+            actualizarTablaCarrito();
+        }
+    </script>
 </body>
 </html>
