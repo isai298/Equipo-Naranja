@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCIV - Sistema de Control de Inventario y Ventas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-800 text-white flex flex-col justify-between shrink-0 hidden">
+        <div>
+            <div class="p-4 border-b border-slate-700 font-bold text-lg flex items-center gap-2">
+                <i class="fa-solid fa-boxes-packing text-indigo-400"></i>
+                <span>SCIV</span>
+            </div>
+            <nav class="p-2 space-y-1 text-sm">
+                <button onclick="showScreen('s2')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-chart-line w-5"></i> Menú Principal</button>
+                <button onclick="showScreen('s3')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-box w-5"></i> Productos</button>
+                <button onclick="showScreen('s4')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-cart-shopping w-5"></i> Ventas (POS)</button>
+                <button onclick="showScreen('s5')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-warehouse w-5"></i> Inventario y Lotes</button>
+                <button onclick="showScreen('s6')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-truck-field w-5"></i> Compras y Proveedores</button>
+                <button onclick="showScreen('s7')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-rotate-left w-5"></i> Devoluciones / Pérdidas</button>
+                <button onclick="showScreen('s8')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar w-5"></i> Reportes y Valor</button>
+                <button onclick="showScreen('s9')" class="w-full text-left px-3 py-2 rounded hover:bg-slate-700 flex items-center gap-2"><i class="fa-solid fa-users-gear w-5"></i> Usuarios y Permisos</button>
+            </nav>
+        </div>
+        <div class="p-3 bg-slate-900 text-xs text-slate-400 text-center">SCIV v2.0 - Hito 2</div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+
+        <header id="topbar" class="bg-white shadow p-4 rounded-lg mb-6 flex justify-between items-center border border-gray-200 hidden">
+            <span class="text-indigo-600 font-bold text-sm">SCIV | Sistema de Control de Inventario y Ventas</span>
+            <div class="text-sm text-gray-500 flex items-center gap-3">
+                <i class="fa-solid fa-circle-user text-gray-400 text-lg"></i>
+                <span id="userInfo"></span>
+                <button onclick="cerrarSesion()" class="text-xs bg-gray-200 hover:bg-gray-300 rounded px-2 py-1"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+            </div>
+        </header>
+
+        <!-- Login -->
+        <section id="s1" class="screen active">
+            <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md border mt-10">
+                <div class="text-center mb-6">
+                    <i class="fa-solid fa-store text-4xl text-indigo-600 mb-2"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Acceso al Sistema SCIV</h2>
+                    <p class="text-sm text-gray-500">Ingrese sus credenciales para continuar</p>
+                </div>
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Usuario</label>
+                        <input type="text" id="loginUser" value="admin_diego" class="mt-1 w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Contraseña</label>
+                        <input type="password" id="loginPass" class="mt-1 w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div id="loginError" class="text-sm text-red-600 hidden"></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 font-medium">Entrar</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Menú principal -->
+        <section id="s2" class="screen">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Menú Principal / Panel de Control</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg border shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-green-100 text-green-600 rounded-full"><i class="fa-solid fa-cash-register text-xl"></i></div>
+                    <div><div class="text-xs text-gray-500">Ventas del Día</div><div class="text-xl font-bold text-gray-800" id="dashVentas">$ 0.00</div></div>
+                </div>
+                <div class="bg-white p-4 rounded-lg border shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-amber-100 text-amber-600 rounded-full"><i class="fa-solid fa-triangle-exclamation text-xl"></i></div>
+                    <div><div class="text-xs text-gray-500">Stock Bajo</div><div class="text-xl font-bold text-amber-600" id="dashStock">0 Productos</div></div>
+                </div>
+                <div class="bg-white p-4 rounded-lg border shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-full"><i class="fa-solid fa-truck text-xl"></i></div>
+                    <div><div class="text-xs text-gray-500">Compras Pendientes</div><div class="text-xl font-bold text-gray-800" id="dashCompras">0 Pedidos</div></div>
+                </div>
+            </div>
+            <h3 class="text-lg font-bold text-gray-700 mb-3">Accesos Rápidos</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button onclick="showScreen('s4')" class="p-4 bg-white border rounded-lg shadow-sm hover:border-indigo-500 text-left flex items-center gap-3">
+                    <i class="fa-solid fa-cart-shopping text-2xl text-green-600"></i>
+                    <div><div class="font-bold">Registro de Ventas</div><div class="text-xs text-gray-500">Punto de venta POS</div></div>
+                </button>
+                <button onclick="showScreen('s3')" class="p-4 bg-white border rounded-lg shadow-sm hover:border-indigo-500 text-left flex items-center gap-3">
+                    <i class="fa-solid fa-box text-2xl text-indigo-600"></i>
+                    <div><div class="font-bold">Productos</div><div class="text-xs text-gray-500">Gestión de catálogo</div></div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Productos (CRUD) -->
+        <section id="s3" class="screen">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Productos y Categorías</h2>
+                <button id="btnNuevoProd" onclick="abrirFormProducto()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"><i class="fa-solid fa-plus"></i> Nuevo producto</button>
+            </div>
+            <div class="bg-white p-4 rounded-lg border shadow-sm mb-4">
+                <input type="text" id="buscarProd" placeholder="Buscar por nombre o código de barras..." class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <!-- Formulario alta/edición -->
+            <div id="formProducto" class="bg-white p-4 rounded-lg border shadow-sm mb-4 hidden">
+                <h3 class="font-bold text-gray-700 mb-3" id="formProdTitulo">Nuevo producto</h3>
+                <input type="hidden" id="fpId">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                    <div><label class="text-xs text-gray-600">Código de barras</label><input id="fpCodigo" class="w-full p-2 border rounded"></div>
+                    <div class="md:col-span-2"><label class="text-xs text-gray-600">Nombre *</label><input id="fpNombre" class="w-full p-2 border rounded"></div>
+                    <div><label class="text-xs text-gray-600">Categoría</label><select id="fpCategoria" class="w-full p-2 border rounded"></select></div>
+                    <div><label class="text-xs text-gray-600">Precio compra</label><input id="fpCompra" type="number" step="0.01" min="0" class="w-full p-2 border rounded"></div>
+                    <div><label class="text-xs text-gray-600">Precio venta *</label><input id="fpVenta" type="number" step="0.01" min="0" class="w-full p-2 border rounded"></div>
+                    <div><label class="text-xs text-gray-600">Stock actual</label><input id="fpStock" type="number" min="0" value="0" class="w-full p-2 border rounded"></div>
+                    <div><label class="text-xs text-gray-600">Stock mínimo</label><input id="fpMinimo" type="number" min="0" value="5" class="w-full p-2 border rounded"></div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button onclick="guardarProducto()" class="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">Guardar</button>
+                    <button onclick="cerrarFormProducto()" class="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300">Cancelar</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-100 border-b text-gray-600">
+                        <tr><th class="p-3">Código</th><th class="p-3">Producto</th><th class="p-3">Categoría</th><th class="p-3">Precio</th><th class="p-3">Stock</th><th class="p-3 text-center">Acciones</th></tr>
+                    </thead>
+                    <tbody id="tablaProductos" class="divide-y"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- POS -->
+        <section id="s4" class="screen">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Registro de Ventas (Punto de Venta POS)</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg border shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4">
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Producto (nombre o código de barras)</label>
+                            <input type="text" id="prodName" list="listaProductos" placeholder="Ej. Leche 1L" autocomplete="off" oninput="seleccionarProducto()" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            <datalist id="listaProductos"></datalist>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Precio Unitario ($)</label>
+                            <input type="number" id="prodPrice" readonly placeholder="0.00" class="w-full p-2 border rounded text-sm bg-gray-50">
+                            <div id="prodStockInfo" class="text-xs text-gray-400 mt-1"></div>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad</label>
+                            <div class="flex gap-1">
+                                <input type="number" id="prodQty" value="1" min="1" class="w-full p-2 border rounded text-sm text-center outline-none">
+                                <button onclick="agregarProducto()" class="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-bold"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto border rounded">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 border-b text-gray-600">
+                                <tr><th class="p-3">Producto</th><th class="p-3">Cant.</th><th class="p-3">Precio</th><th class="p-3">Subtotal</th><th class="p-3 text-center">Acción</th></tr>
+                            </thead>
+                            <tbody id="cartTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg border shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Resumen de Cobro</h3>
+                        <div class="text-3xl font-bold text-indigo-600 mb-6" id="totalDisplay">$ 0.00 MXN</div>
+                        <div class="space-y-3 mb-4">
+                            <div>
+                                <label class="text-xs text-gray-600 block mb-1">Método de Pago</label>
+                                <select id="metodo-pago" onchange="calcularCambio()" class="w-full p-2 border rounded text-sm"><option>Efectivo</option><option>Tarjeta</option></select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-600 block mb-1">Monto Recibido</label>
+                                <input type="number" id="montoRecibido" oninput="calcularCambio()" placeholder="0.00" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div class="p-3 bg-gray-100 rounded text-sm">
+                                <span class="text-gray-600">Cambio a entregar:</span>
+                                <span class="font-bold text-green-600 float-right" id="cambioDisplay">$ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <button id="btn-cobrar" class="w-full py-3 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow">Cobrar e Imprimir</button>
+                        <button onclick="cancelarVenta()" class="w-full py-2 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">Cancelar Venta</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Módulos pendientes (fuera del flujo principal de este hito) -->
+        <section id="s5" class="screen"><h2 class="text-2xl font-bold text-gray-800 mb-4">Inventario y Lotes</h2><div class="bg-white p-6 rounded border">Control de caducidades y stock.</div></section>
+        <section id="s6" class="screen"><h2 class="text-2xl font-bold text-gray-800 mb-4">Compras y Proveedores</h2><div class="bg-white p-6 rounded border">Órdenes de compra.</div></section>
+        <section id="s7" class="screen"><h2 class="text-2xl font-bold text-gray-800 mb-4">Devoluciones</h2><div class="bg-white p-6 rounded border">Módulo de mermas y devoluciones.</div></section>
+        <section id="s8" class="screen"><h2 class="text-2xl font-bold text-gray-800 mb-4">Reportes</h2><div class="bg-white p-6 rounded border">Estadísticas y valorización.</div></section>
+        <section id="s9" class="screen"><h2 class="text-2xl font-bold text-gray-800 mb-4">Usuarios</h2><div class="bg-white p-6 rounded border">Control de accesos y perfiles.</div></section>
+    </main>
+
+    <script>
+        let carrito = [];          // [{id_producto, name, price, qty, subtotal}]
+        let catalogo = [];         // productos activos desde la BD
+        let usuarioActual = null;
+
+        // ---------- Utilidades ----------
+        const $ = (id) => document.getElementById(id);
+        const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const money = (n) => Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        async function api(url, opciones = {}) {
+            const resp = await fetch(url, {
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                ...opciones,
+                body: opciones.body ? JSON.stringify(opciones.body) : undefined,
+            });
+            let datos = {};
+            try { datos = await resp.json(); } catch (e) { /* respuesta no JSON */ }
+            if (resp.status === 401 && url !== 'api/login.php') { mostrarLogin(); }
+            if (!resp.ok || datos.ok === false) {
+                throw new Error(datos.mensaje || 'Error en la petición (' + resp.status + ')');
+            }
+            return datos;
+        }
+
+        // ---------- Navegación y sesión ----------
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            $(id).classList.add('active');
+            if (id === 's2') cargarDashboard();
+            if (id === 's3') cargarProductos();
+            if (id === 's4') cargarCatalogoPOS();
+        }
+
+        function mostrarLogin() {
+            usuarioActual = null;
+            $('sidebar').classList.add('hidden');
+            $('topbar').classList.add('hidden');
+            showScreen('s1');
+        }
+
+        function entrarAlSistema(usuario) {
+            usuarioActual = usuario;
+            $('userInfo').innerHTML = 'Usuario: <strong>' + esc(usuario.nombre) + ' (' + esc(usuario.rol) + ')</strong>';
+            $('sidebar').classList.remove('hidden');
+            $('topbar').classList.remove('hidden');
+            $('btnNuevoProd').classList.toggle('hidden', usuario.rol !== 'Administrador');
+            showScreen('s2');
+        }
+
+        $('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            $('loginError').classList.add('hidden');
+            try {
+                const r = await api('api/login.php', { method: 'POST', body: { username: $('loginUser').value.trim(), password: $('loginPass').value } });
+                $('loginPass').value = '';
+                entrarAlSistema(r.usuario);
+            } catch (err) {
+                $('loginError').textContent = err.message;
+                $('loginError').classList.remove('hidden');
+            }
+        });
+
+        async function cerrarSesion() {
+            try { await api('api/sesion.php', { method: 'DELETE' }); } catch (e) {}
+            mostrarLogin();
+        }
+
+        // ---------- Dashboard ----------
+        async function cargarDashboard() {
+            try {
+                const d = await api('api/dashboard.php');
+                $('dashVentas').textContent = '$ ' + money(d.ventas_dia);
+                $('dashStock').textContent = d.stock_bajo + ' Productos';
+                $('dashCompras').textContent = d.compras_pendientes + ' Pedidos';
+            } catch (e) { /* si es 401 ya se mostró el login */ }
+        }
+
+        // ---------- Productos (CRUD) ----------
+        let timerBusqueda = null;
+        $('buscarProd').addEventListener('input', () => {
+            clearTimeout(timerBusqueda);
+            timerBusqueda = setTimeout(cargarProductos, 250);
+        });
+
+        async function cargarProductos() {
+            try {
+                const q = encodeURIComponent($('buscarProd').value.trim());
+                const r = await api('api/productos.php?q=' + q);
+                const esAdmin = usuarioActual && usuarioActual.rol === 'Administrador';
+                $('tablaProductos').innerHTML = r.productos.length === 0
+                    ? '<tr><td colspan="6" class="p-4 text-center text-gray-400 text-xs">Sin productos.</td></tr>'
+                    : r.productos.map(p => {
+                        const bajo = Number(p.stock_actual) <= Number(p.stock_minimo);
+                        return `<tr class="hover:bg-gray-50">
+                            <td class="p-3 text-gray-500">${esc(p.codigo_barras)}</td>
+                            <td class="p-3 font-medium text-gray-800">${esc(p.nombre)}</td>
+                            <td class="p-3">${esc(p.categoria || '-')}</td>
+                            <td class="p-3">$ ${money(p.precio_venta)}</td>
+                            <td class="p-3 ${bajo ? 'text-amber-600 font-bold' : ''}">${p.stock_actual}${bajo ? ' <i class="fa-solid fa-triangle-exclamation"></i>' : ''}</td>
+                            <td class="p-3 text-center">${esAdmin ? `
+                                <button onclick="editarProducto(${p.id_producto})" class="text-indigo-600 hover:text-indigo-800 px-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="eliminarProducto(${p.id_producto})" class="text-red-500 hover:text-red-700 px-2"><i class="fa-solid fa-trash"></i></button>` : '-'}</td>
+                        </tr>`;
+                    }).join('');
+                catalogoTabla = r.productos;
+            } catch (e) { alert(e.message); }
+        }
+        let catalogoTabla = [];
+
+        async function cargarCategorias() {
+            const r = await api('api/categorias.php');
+            $('fpCategoria').innerHTML = '<option value="">Sin categoría</option>' +
+                r.categorias.map(c => `<option value="${c.id_categoria}">${esc(c.nombre)}</option>`).join('');
+        }
+
+        async function abrirFormProducto(p = null) {
+            await cargarCategorias();
+            $('formProdTitulo').textContent = p ? 'Editar producto' : 'Nuevo producto';
+            $('fpId').value = p ? p.id_producto : '';
+            $('fpCodigo').value = p ? (p.codigo_barras || '') : '';
+            $('fpNombre').value = p ? p.nombre : '';
+            $('fpCategoria').value = p && p.id_categoria ? p.id_categoria : '';
+            $('fpCompra').value = p ? p.precio_compra : '';
+            $('fpVenta').value = p ? p.precio_venta : '';
+            $('fpStock').value = p ? p.stock_actual : 0;
+            $('fpMinimo').value = p ? p.stock_minimo : 5;
+            $('formProducto').classList.remove('hidden');
+        }
+        function cerrarFormProducto() { $('formProducto').classList.add('hidden'); }
+        function editarProducto(id) { abrirFormProducto(catalogoTabla.find(p => Number(p.id_producto) === id)); }
+
+        async function guardarProducto() {
+            const id = $('fpId').value;
+            const cuerpo = {
+                codigo_barras: $('fpCodigo').value, nombre: $('fpNombre').value,
+                id_categoria: $('fpCategoria').value || null,
+                precio_compra: $('fpCompra').value || 0, precio_venta: $('fpVenta').value,
+                stock_actual: $('fpStock').value, stock_minimo: $('fpMinimo').value,
+            };
+            try {
+                await api(id ? 'api/productos.php?id=' + id : 'api/productos.php', { method: id ? 'PUT' : 'POST', body: cuerpo });
+                cerrarFormProducto();
+                cargarProductos();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function eliminarProducto(id) {
+            if (!confirm('¿Desactivar este producto? Dejará de aparecer en el catálogo y en el POS.')) return;
+            try { await api('api/productos.php?id=' + id, { method: 'DELETE' }); cargarProductos(); }
+            catch (e) { alert(e.message); }
+        }
+
+        // ---------- POS ----------
+        async function cargarCatalogoPOS() {
+            try {
+                const r = await api('api/productos.php');
+                catalogo = r.productos;
+                $('listaProductos').innerHTML = catalogo.map(p => `<option value="${esc(p.nombre)}">${esc(p.codigo_barras || '')}</option>`).join('');
+                actualizarTablaCarrito();
+            } catch (e) { /* 401 manejado */ }
+        }
+
+        function buscarEnCatalogo(texto) {
+            const t = texto.trim().toLowerCase();
+            return catalogo.find(p => p.nombre.toLowerCase() === t || (p.codigo_barras && p.codigo_barras.toLowerCase() === t));
+        }
+
+        function seleccionarProducto() {
+            const p = buscarEnCatalogo($('prodName').value);
+            $('prodPrice').value = p ? p.precio_venta : '';
+            $('prodStockInfo').textContent = p ? 'Disponible: ' + p.stock_actual : '';
+        }
+
+        function agregarProducto() {
+            const p = buscarEnCatalogo($('prodName').value);
+            const qty = parseInt($('prodQty').value, 10);
+            if (!p) { alert('Selecciona un producto existente del catálogo.'); return; }
+            if (isNaN(qty) || qty <= 0) { alert('Ingresa una cantidad válida.'); return; }
+
+            const id = Number(p.id_producto);
+            const yaEnCarrito = carrito.find(i => i.id_producto === id);
+            const totalQty = (yaEnCarrito ? yaEnCarrito.qty : 0) + qty;
+            if (totalQty > Number(p.stock_actual)) { alert('Stock insuficiente. Disponible: ' + p.stock_actual); return; }
+
+            if (yaEnCarrito) { yaEnCarrito.qty = totalQty; yaEnCarrito.subtotal = yaEnCarrito.price * totalQty; }
+            else { carrito.push({ id_producto: id, name: p.nombre, price: Number(p.precio_venta), qty, subtotal: Number(p.precio_venta) * qty }); }
+
+            $('prodName').value = ''; $('prodPrice').value = ''; $('prodQty').value = '1'; $('prodStockInfo').textContent = '';
+            actualizarTablaCarrito();
+        }
+
+        function eliminarItem(i) { carrito.splice(i, 1); actualizarTablaCarrito(); }
+
+        function totalCarrito() { return carrito.reduce((a, i) => a + i.subtotal, 0); }
+
+        function actualizarTablaCarrito() {
+            const tbody = $('cartTableBody');
+            if (carrito.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-xs">No hay productos agregados en la venta actual.</td></tr>';
+                $('totalDisplay').textContent = '$ 0.00 MXN';
+                $('cambioDisplay').textContent = '$ 0.00';
+                return;
+            }
+            tbody.innerHTML = carrito.map((item, i) => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-medium text-gray-800">${esc(item.name)}</td>
+                    <td class="p-3">${item.qty}</td>
+                    <td class="p-3">$ ${money(item.price)}</td>
+                    <td class="p-3 font-bold text-indigo-600">$ ${money(item.subtotal)}</td>
+                    <td class="p-3 text-center"><button onclick="eliminarItem(${i})" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`).join('');
+            $('totalDisplay').textContent = '$ ' + money(totalCarrito()) + ' MXN';
+            calcularCambio();
+        }
+
+        function calcularCambio() {
+            const recibido = parseFloat($('montoRecibido').value) || 0;
+            const cambio = recibido - totalCarrito();
+            $('cambioDisplay').textContent = ($('metodo-pago').value === 'Efectivo' && cambio >= 0) ? '$ ' + money(cambio) : '$ 0.00';
+        }
+
+        async function cobrarVenta() {
+            if (carrito.length === 0) { alert('El carrito está vacío. Agregue productos antes de cobrar.'); return; }
+            const metodo = $('metodo-pago').value;
+            const recibido = parseFloat($('montoRecibido').value) || 0;
+            if (metodo === 'Efectivo' && recibido < totalCarrito()) { alert('El monto recibido es menor al total de la venta.'); return; }
+
+            try {
+                const r = await api('api/procesar_venta.php', {
+                    method: 'POST',
+                    body: {
+                        metodo_pago: metodo,
+                        monto_recibido: metodo === 'Tarjeta' ? totalCarrito() : recibido,
+                        items: carrito.map(i => ({ id_producto: i.id_producto, cantidad: i.qty })),
+                    },
+                });
+                alert(`Venta #${r.id_venta} registrada.\nTotal: $ ${money(r.total)}\nCambio: $ ${money(r.cambio)}`);
+                cancelarVenta();
+                cargarCatalogoPOS(); // refresca stock disponible
+            } catch (err) {
+                alert('No se pudo completar la venta: ' + err.message);
+            }
+        }
+        $('btn-cobrar').addEventListener('click', cobrarVenta);
+
+        function cancelarVenta() {
+            carrito = [];
+            $('montoRecibido').value = '';
+            actualizarTablaCarrito();
+        }
+
+        // ---------- Arranque: ¿ya hay sesión? ----------
+        (async () => {
+            try {
+                const r = await fetch('api/sesion.php', { credentials: 'same-origin' });
+                if (r.ok) { const d = await r.json(); entrarAlSistema(d.usuario); return; }
+            } catch (e) {}
+            mostrarLogin();
+        })();
+    </script>
+</body>
+</html>
